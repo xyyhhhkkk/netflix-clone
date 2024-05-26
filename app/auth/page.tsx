@@ -1,15 +1,57 @@
 "use client"; //要放在第一行
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useReducer, useState } from "react";
 import Input from "../Input";
+import axios from "axios";
+import { signIn } from "next-auth/react";
+import { redirect } from "next/dist/server/api-utils";
+import { useRouter } from "next/navigation";
 
 const Auth = () => {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [variant, setVariant] = useState('login');
+
+  const [variant, setVariant] = useState("login");
+
   const toggleVariant = useCallback(() => {
-    setVariant((currentVariant) => currentVariant === 'login' ? 'register' : 'login');
-}, []);
+    setVariant((currentVariant) =>
+      currentVariant === "login" ? "register" : "login"
+    );
+  }, []);
+
+  const login = useCallback(async () => {
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (res?.error) {
+        console.error("Failed to login:", res.error);
+      } else {
+        router.push("/test");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [email, password, router]);
+
+  const register = useCallback(async () => {
+    try {
+      await axios.post("/api/register", {
+        email,
+        name,
+        password,
+      });
+
+      login();
+    } catch (error) {
+      console.log(error);
+    }
+  }, [email, name, password, login]);
 
   return (
     <div className="relative h-full w-full bg-[url('/images/hero.jpg')] bg-no-repeat bg-center bg-fixed bg cover">
@@ -20,18 +62,18 @@ const Auth = () => {
         <div className="flex justify-center">
           <div className="bg-black bg-opacity-70 px-16 py-16 self-center mt-2 lg:w-2/5 lg:max-w-md">
             <h2 className="text-white text-4xl mb-8 font-semibold">
-                {variant === 'login' ? 'Sign in' : 'register'}
+              {variant === "login" ? "Sign in" : "register"}
             </h2>
             <div className="flex flex-col gap-4">
-                {variant === 'register' && (
-              <Input
-                label="Username"
-                onChange={(ev: any) => setName(ev.target.value)}
-                id="name"
-                type="name"
-                value={name}
-              />
-            )}
+              {variant === "register" && (
+                <Input
+                  label="Username"
+                  onChange={(ev: any) => setName(ev.target.value)}
+                  id="name"
+                  type="name"
+                  value={name}
+                />
+              )}
               <Input
                 label="Email"
                 onChange={(ev: any) => setEmail(ev.target.value)}
@@ -48,14 +90,22 @@ const Auth = () => {
               />
             </div>
             <div>
-              <button className="bg-red-600 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700 transition">
-                {variant === 'login' ? 'login' : 'sign up'}
+              <button
+                onClick={variant === "login" ? login : register}
+                className="bg-red-600 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700 transition"
+              >
+                {variant === "login" ? "login" : "sign up"}
               </button>
               <p className="text-neutral-500 mt-12">
-                {variant === 'login' ? 'First time using netflix?' : 'Already have an account?'}
-                
-                <span onClick={toggleVariant} className="text-white ml-1 hover:underline cursor-pointer">
-                    {variant === 'login' ? 'Create an account' : 'Login'}
+                {variant === "login"
+                  ? "First time using netflix?"
+                  : "Already have an account?"}
+
+                <span
+                  onClick={toggleVariant}
+                  className="text-white ml-1 hover:underline cursor-pointer"
+                >
+                  {variant === "login" ? "Create an account" : "Login"}
                 </span>
               </p>
             </div>
@@ -67,6 +117,5 @@ const Auth = () => {
 };
 export default Auth;
 function setVariant(arg0: (currentVariant: string) => "login" | "register") {
-    throw new Error("Function not implemented.");
+  throw new Error("Function not implemented.");
 }
-
